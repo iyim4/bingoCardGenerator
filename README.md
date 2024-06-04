@@ -1,5 +1,10 @@
 # Bingo Card Generator
-Creates a bingo card from a list of words from a CSV file.
-Features:
+Creates a bingo card from a list of words from a file (each word must be on a separate line)
+### Features:
 - customizable width
-- optional free space in center or random spot
+- optional free space
+- optional alphabetical mode (words sorted alphabetically on card)
+
+### Coming soon:
+- randomized free space placement
+- combine multiple files for a larger list of words
