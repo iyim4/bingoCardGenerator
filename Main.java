@@ -1,6 +1,7 @@
 import java.util.Scanner;
 import java.util.Random;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -73,19 +74,21 @@ public class Main {
     private static void runMenu(Scanner keyboard, ArrayList<String> list, int longestWordLen) {
         boolean quit = false;
         boolean freespace = true; // initial include freespace
+        boolean alphabetical = false; // initial alphabetical mode off
         int width = (list.size() >= 25) ? 5 : (int) Math.sqrt(list.size());  // initial width. default 5 if enough words.
         do {
-            System.out.println("\nWould you like to generate a bingo card with a width of " + width +
-                ", and " + ((freespace) ? "a freespace?" : "NO freespace?"));
-                String menuOptions = "\t1. Yes, generate card\n\t2. No, change width\n\t3. No, " +
-                    "change freespace\n\t4. No, change data file\n\t5. Quit";
-            int input = getIntFromUser(keyboard, 1, 5, menuOptions);
+            System.out.println("\nWould you like to generate a bingo card with a width of " + width + ", " + 
+                    ((freespace) ? "a free space" : "NO free space") + ", and " + 
+                    ((alphabetical) ? "alphabetically sorted?" : "not alphabetically sorted?"));
+            String menuOptions = "\t1. Yes, generate card\n\t2. No, change width\n\t3. No, " +
+                    "toggle Free space\n\t4. No, change data file\n\t5. No, toggle alphabetical mode\n\t6. Quit";
+            int input = getIntFromUser(keyboard, 1, 6, menuOptions);
             System.out.println();
 
             switch (input) {
                 case 1:
                     // generate card
-                    printCard(list, width, freespace, longestWordLen);
+                    printCard(list, width, freespace, longestWordLen, alphabetical);
                     break;
                 case 2:
                     // change width
@@ -95,7 +98,7 @@ public class Main {
                 case 3:
                     // toggle freespace
                     freespace = !freespace;
-                    System.out.println("Freespace " + ((freespace) ? "added" : "removed"));
+                    System.out.println("Free space " + ((freespace) ? "added" : "removed"));
                     break;
                 case 4:
                     // change file
@@ -103,6 +106,11 @@ public class Main {
                     width = (list.size() >= 25) ? 5 : (int) Math.sqrt(list.size());
                     break;
                 case 5:
+                    // toggle alphabetical mode
+                    alphabetical = !alphabetical;
+                    System.out.println("Alphabetical mode turned " + ((alphabetical) ? "on" : "off"));
+                    break;
+                case 6:
                     // quit
                     quit = true;
                     break;
@@ -151,7 +159,7 @@ public class Main {
      * @param freespace whether to include a FREE space on the card.
      * @param longestWordLen length of the longest word in the card, for formatting
      */
-    private static void printCard(ArrayList<String> list, int width, boolean freespace, int longestWordLen) {
+    private static void printCard(ArrayList<String> list, int width, boolean freespace, int longestWordLen, boolean alphabetical) {
         Random random = new Random();
         int numBingoWords = width * width;
         int freespaceIndex = width * width / 2;
@@ -160,14 +168,17 @@ public class Main {
         // place unique values at end of list and generate random numbers within a decreasingly 
         // smaller range, guaranteeing unique values every funnction call without the need to reset  
         // the array for generating new cards. Worst case O(sqrt(N)) card generation.
-        for (int i = 0; i < numBingoWords; i++) {
+        for (int i = 0; i < numBingoWords; i++, endIndex--) {
             int index = random.nextInt(0, endIndex + 1);
             // swap the random word with the word at the end of the working list
             String temp = list.get(index);
             list.set(index, list.get(endIndex));
             list.set(endIndex, temp);
-            // decrease random number generation range
-            endIndex--;
+        }
+
+        // alphabetical mode: prints card in alphabetical order
+        if (alphabetical) {
+            Collections.sort(list.subList(list.size() - numBingoWords, list.size()));
         }
 
         // print out last numBingoWords words of list
