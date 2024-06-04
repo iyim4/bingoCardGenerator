@@ -186,7 +186,7 @@ public class Main {
         for (int i = 0; i < numBingoWords; i++) {
             if (i % width == 0) result.append('\n');
             String format = "%1$-" + (longestWordLen + 1) + "s";
-            String word = list.get(list.size() - 1 - i);
+            String word = list.get(list.size() - numBingoWords + i);
             if (freespace && i == freespaceIndex) {
                 word = "FREE";
             }
