@@ -4,74 +4,129 @@ import java.util.ArrayList;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.Math;
 
 public class Main {
+    private static int longestWordLen; // for card formatting
     
     public static void main(String[] args) throws IOException {
-        Scanner console = new Scanner(System.in);
-        int width = 5;
-        boolean freespace = true;
-        ArrayList<String> list;
+        Scanner keyboard = new Scanner(System.in);
+        ArrayList<String> list = new ArrayList<>();
 
-        // welcome and get file
-        System.out.println("Welcome to the bingo card generator! First, what is the is the data file name?\n" + 
-        "(Note: it must be in the same file/directory as this program)");
-        File file = new File("./" + console.nextLine());
-        list = readFile(file);
-        System.out.println("File found sucessfully. There are " + list.size() + " words.");
+        // welcome and setup
+        System.out.println("Welcome to the bingo card generator! ");
+        getSourceFile(keyboard, list);
+        // length of longest is used for formating, and only in runprogram. consider changing location or smthn.
+        int width = (list.size() >= 25) ? 5 : (int) Math.sqrt(list.size());
+        runProgram(keyboard, width, true, list);
+        keyboard.close();
+    }
 
-        // split method here!!
+    // fills list with words and sets lengthOfLongestWord.
+    private static void getSourceFile(Scanner keyboard, ArrayList<String> list) {
+        if (!list.isEmpty()) {
+            list.clear();
+        }
+        
+        boolean done = true;
         do {
-            System.out.println("Would you like to generate a bingo card with a width of " + width +
-                ", and " + ((freespace) ? "a freespace?" : "NO freespace?"));
-            System.out.println("1. yes\n2. No, change width\n3. No, change freespace");
-            int input = 0;  //Q? how to do this efficently???
-            while (!console.hasNextInt()) {
-                System.out.println("Please enter 1, 2, or 3.");
-                console.nextLine();
-                if (console.hasNextInt()) {
-                    input = console.nextInt();
-                    if (1 <= input || input <= 3) break;
+            System.out.println("What is the is the data file name? (Note: it must be in the same " +
+                "directory as this program)\nOptions:");
+            listFiles();
+            System.out.print("Enter a file name: ");
+            File file = new File("./" + keyboard.nextLine());
+
+            // attempt to read file
+            int longest = -1;
+            try {
+                Scanner scanner = new Scanner(file);
+                while (scanner.hasNextLine()) {
+                    String temp = scanner.nextLine(); 
+                    list.add(temp);
+                    if (temp.length() > longest) {
+                        longest = temp.length();
+                    }
                 }
+                longestWordLen = longest;
+                scanner.close();
+
+                // repeat if file was empty
+                if (longest == -1) {
+                    System.out.println("Error: File was empty."); 
+                    done = false;
+                } else {
+                    done = true;
+                }
+            } catch (FileNotFoundException error) {
+                System.out.println("Error: File not found.");
+                error.printStackTrace(); //delete
+                done = false;
             }
+        } while (!done);
+        System.out.println("File found sucessfully. There are " + list.size() + " words.");
+    }
+
+    private static void runProgram(Scanner keyboard, int width, boolean freespace, ArrayList<String> list) {
+        boolean quit = false;
+        do {
+            System.out.println("\nWould you like to generate a bingo card with a width of " + width +
+                ", and " + ((freespace) ? "a freespace?" : "NO freespace?"));
+                String menuOptions = "\t1. Yes, generate card\t\n2. No, change width\t\n3. No, change freespace\t\n4. No, change data file\n5. Quit";
+            int input = getIntFromUser(keyboard, 1, 5, menuOptions);
+            System.out.println();
+
             switch (input) {
                 case 1:
                     // generate card
-                    int freespaceIndex = width * width / 2;
-                    printCard(list, width, freespace, freespaceIndex);
+                    printCard(list, width, freespace, (width * width / 2));
                     break;
                 case 2:
                     // change width
+                    int maxWidth = (int) Math.sqrt(list.size());
+                    width = getIntFromUser(keyboard, 1, maxWidth, "Enter a width, max " + maxWidth);
                     break;
                 case 3:
                     // change freespace
+                    freespace = !freespace;
+                    System.out.println("Freespace " + ((freespace) ? "added" : "removed"));
                     break;
+                case 4:
+                    // change file
+                    getSourceFile(keyboard, list);
+                    width = (list.size() >= 25) ? 5 : (int) Math.sqrt(list.size());
+                    break;
+                case 5:
+                    // quit
+                    quit = true;
                 default: 
                     //error message
                     break;
             }
-            System.out.println("Type y generate another card or any other key to quit.");
-        } while (console.nextLine().toLowerCase() != "y");
+        } while (!quit);
         System.out.println("Thank you!");
-        console.close();
     }
 
-    /**
-     * returns an ArrayList of strings from file
-     */
-    private static ArrayList<String> readFile(File file) {
-        ArrayList<String> list = new ArrayList<>();
-        try {
-            Scanner scanner = new Scanner(file);
-            while (scanner.hasNext()) {
-                list.add(scanner.next());
+    private static int getIntFromUser(Scanner keyboard, int low, int high, String message) {
+        boolean done = true;
+        int result = 0;
+        do {
+            System.out.println(message);
+            System.out.print("Enter a number between " + low + " and " + high + ": ");
+            String input = keyboard.nextLine();
+            try {
+                result = Integer.parseInt(input);
+                if (result > high || result < low) {
+                    System.out.println("Invalid. Out of range");
+                    done = false;
+                } else {
+                    done = true;
+                }
+            } catch (NumberFormatException error) {
+                System.out.println("Invalid. Not a number");
+                done = false;
             }
-            scanner.close();
-        } catch (FileNotFoundException e) {
-            System.out.println("Error: File not found.");
-            e.printStackTrace();
-        }
-        return list;
+        } while (!done);
+        return result;
     }
 
     // generates and prints card
@@ -95,12 +150,25 @@ public class Main {
         // print out last totNumElems words of list
         StringBuilder result = new StringBuilder();
         for (int i = 0; i < totNumWords; i++) {
-            // q? todo: align
             if (i % width == 0) result.append('\n');
-            result.append(list.get(list.size() - 1 - i)).append('\t');
+            String format = "%1$-" + (longestWordLen + 1) + "s";
+            String word = list.get(list.size() - 1 - i);
+            if (i == freespaceIndex && freespace) {
+                word = "FREE";
+            }
+            result.append(String.format(format, word));
         }
         result.append('\n');
         System.out.println(result.toString());
+    }
+
+    // lists files in this directory
+    private static void listFiles() {
+        String[] files = new File(".").list();
+        for (String file : files) {
+            System.out.println("\t" + file);
+        }
+        System.out.println();
     }
     
 }
